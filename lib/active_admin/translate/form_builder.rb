@@ -44,7 +44,12 @@ module ActiveAdmin
       #
       def locale_fields(name, block)
         ::I18n.available_locales.map do |locale|
-          translation = object.translation_for(locale)
+          translation = 
+            if object.respond_to?(:translation_for)
+              object.translation_for(locale)
+            else
+              mobility_translation_for(object, locale)
+            end
           translation.instance_variable_set(:@errors, object.errors) if locale == I18n.default_locale
 
           fields = proc do |form|
@@ -56,6 +61,13 @@ module ActiveAdmin
         end.join.html_safe
       end
 
+      def mobility_translation_for(object, locale)
+        locale = locale.to_s
+        translations = object.translations
+        translation = translations.find { |t| t.locale == locale }
+        translation ||= translations.build(locale: locale)
+        translation
+      end
 
       # Create the locale tab to switch the translations.
       #
